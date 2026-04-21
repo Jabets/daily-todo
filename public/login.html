@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 每日待办</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="auth-container">
+    <h1 class="auth-title">每日待办</h1>
+    <p class="auth-subtitle" id="authSubtitle">登录到您的账号</p>
+
+    <div id="errorMsg" class="error-message hidden"></div>
+    <div id="successMsg" class="success-message hidden"></div>
+
+    <form class="auth-form" id="authForm">
+      <div class="form-group">
+        <label class="form-label" for="username">用户名</label>
+        <input
+          type="text"
+          class="form-input"
+          id="username"
+          placeholder="输入用户名"
+          autocomplete="username"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">密码</label>
+        <input
+          type="password"
+          class="form-input"
+          id="password"
+          placeholder="输入密码"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+
+      <button type="submit" class="auth-btn" id="submitBtn">登录</button>
+    </form>
+
+    <p class="auth-switch">
+      <span id="switchText">还没有账号？</span>
+      <a id="switchLink">注册</a>
+    </p>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/api.js"></script>
+  <script>
+    let isLogin = true;
+
+    const form = document.getElementById('authForm');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const switchText = document.getElementById('switchText');
+    const switchLink = document.getElementById('switchLink');
+    const authSubtitle = document.getElementById('authSubtitle');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+
+    if (auth.isLoggedIn()) {
+      window.location.href = '/';
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.remove('hidden');
+      successMsg.classList.add('hidden');
+    }
+
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.classList.remove('hidden');
+      errorMsg.classList.add('hidden');
+    }
+
+    function hideMessages() {
+      errorMsg.classList.add('hidden');
+      successMsg.classList.add('hidden');
+    }
+
+    function updateUI() {
+      if (isLogin) {
+        authSubtitle.textContent = '登录到您的账号';
+        submitBtn.textContent = '登录';
+        switchText.textContent = '还没有账号？';
+        switchLink.textContent = '注册';
+      } else {
+        authSubtitle.textContent = '创建新账号';
+        submitBtn.textContent = '注册';
+        switchText.textContent = '已有账号？';
+        switchLink.textContent = '登录';
+      }
+      hideMessages();
+    }
+
+    switchLink.addEventListener('click', () => {
+      isLogin = !isLogin;
+      updateUI();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessages();
+      submitBtn.disabled = true;
+      submitBtn.textContent = isLogin ? '登录中...' : '注册中...';
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      try {
+        const data = isLogin
+          ? await api.auth.login(username, password)
+          : await api.auth.register(username, password);
+
+        auth.saveAuth(data.token, data.user.username);
+        window.location.href = '/';
+      } catch (err) {
+        showError(err.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = isLogin ? '登录' : '注册';
+      }
+    });
+  </script>
+</body>
+</html>
